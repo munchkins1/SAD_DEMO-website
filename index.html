@@ -1,0 +1,1474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Dynasty Veterinary Clinic</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- (merged into the single tailwind.config below: navy/royal/brandgold + Inter are part of the active theme) -->
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Brand theme sampled from the Pet Dynasty logo: royal blue + gold -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: { 700: '#1e1b4b', 800: '#151238', 900: '#0f172a', 950: '#090d16' },
+                        royal: { 500: '#3b82f6', 600: '#1e3a8a', 700: '#1e40af' },
+                        // "teal" is remapped to the logo's royal blue
+                        teal: {
+                            50: '#eef0ff', 100: '#e0e4ff', 200: '#c6cdff', 300: '#a4adff',
+                            400: '#7c84fb', 500: '#5a5ff0', 600: '#3330cc', 700: '#2725a8',
+                            800: '#1f1d87', 900: '#1a1970', 950: '#0f0e47'
+                        },
+                        // "amber" is remapped to the logo's gold
+                        amber: {
+                            50: '#fff9e8', 100: '#fef1c7', 200: '#fde58a', 300: '#fcd34d',
+                            400: '#f8c93f', 500: '#f0b429', 600: '#c2820a', 700: '#92600a',
+                            800: '#713f12', 900: '#7a4813', 950: '#462706'
+                        },
+                        // "brandgold-500" deliberately AA on white (darker than decorative logo gold)
+                        brandgold: { 300: '#fcd34d', 400: '#f6c453', 500: '#b45309' }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* User theme tokens (readability-first, low-blur) */
+        :root {
+            --primary-blue: #0f172a;  /* deep rich navy blue */
+            --accent-blue: #1e3a8a;   /* vibrant royal blue */
+            --card-bg: rgba(15, 23, 42, 0.8);  /* semi-transparent dark navy glass */
+            --text-main: #ffffff;     /* pure white for high contrast on dark glass */
+            --text-muted: #cbd5e1;    /* light slate for secondary descriptions */
+            --gold-soft: #f6c453;     /* brand gold used sparingly for accents */
+            --gold-ring: rgba(246, 196, 83, 0.35);
+            --line-soft: rgba(255, 255, 255, 0.15);
+        }
+        ::selection { background: var(--gold-soft); color: var(--primary-blue); }
+
+        /* Typography: clean modern sans, strictly NO italics anywhere in the UI */
+        *, *::before, *::after { font-style: normal !important; }
+
+        body {
+            background: radial-gradient(circle at 50% 20%, #111e38 0%, #060913 70%);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: #f8fafc;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            background-attachment: fixed;
+        }
+
+        /* Same deep atmospheric gradient on the app shell: staff dashboard + patient portal */
+        #view-app,
+        #tab-staff-dashboard,
+        #tab-patient-queue,
+        #tab-patient-book {
+            background: radial-gradient(circle at 50% 20%, #111e38 0%, #060913 70%);
+            background-attachment: fixed;
+            min-height: 100vh;
+        }
+
+        /* Crisp, non-blurry card containers */
+        .glass-card {
+            background-color: var(--card-bg);
+            background-image: none;
+            color: var(--text-main);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 0 8px 10px -6px rgba(0, 0, 0, 0.30);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            position: relative;
+            transition: transform .25s ease, box-shadow .3s ease, border-color .3s ease;
+        }
+        .glass-card::before { display: none; }
+        .glass-card:hover { transform: translateY(-2px); }
+
+        /* Readability: text-slate-400 only ever sits on white cards, so lift it to slate-500 (AA) */
+        body .text-slate-400 { color: #cbd5e1; }
+
+        /* User theme: headings stay sharp and high-contrast */
+        h1, h2, h3 {
+            letter-spacing: -0.025em;
+        }
+        .glass-card h1, .glass-card h2, .glass-card h3 { color: var(--text-main); }
+
+        /* User theme: crisp controls — solid backgrounds, sharp text */
+        input, select, textarea {
+            background-color: rgba(15, 23, 42, 0.6) !important;
+            border: 1.5px solid rgba(255, 255, 255, 0.18) !important;
+            color: #ffffff !important;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        input::placeholder { color: #94a3b8; }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+        }
+        select { background-color: rgba(15, 23, 42, 0.6) !important; border: 1.5px solid rgba(255, 255, 255, 0.18) !important; border-radius: 8px; padding: 12px 16px; font-size: 1rem; }
+        select option { background-color: #0f172a; color: #ffffff; }
+
+        /* ---- Universal readable text: every non-button word is a solid guaranteed color ---- */
+        body p:not(.gradient-text), body li, body th, body td, body div:not(.gradient-text), body span:not(.gradient-text) { color: inherit; }
+        p, li, th, td { color: inherit; }
+        h1, h2, h3, .title { font-weight: 700; }
+        .glass-card, .glass-card input, .glass-card select, .glass-card textarea { color: var(--text-main); }
+        .glass-card .text-slate-800, .glass-card .text-slate-900 { color: #ffffff; }
+        .glass-card .text-slate-700 { color: #f1f5f9; }
+        .glass-card .text-slate-600 { color: #e2e8f0; }
+        .glass-card .text-slate-500 { color: #cbd5e1; }
+        .glass-card .text-slate-400 { color: #cbd5e1; }
+        .glass-card .text-teal-500 { color: #93c5fd; }
+        .glass-card .text-teal-600 { color: #bfdbfe; }
+        .glass-card .text-teal-700, .glass-card .text-teal-800, .glass-card .text-teal-900 { color: #bfdbfe; }
+        .glass-card .text-amber-600 { color: #fcd34d; }
+        .glass-card .text-amber-500 { color: #fcd34d; }
+        .glass-card .text-amber-700 { color: #fde68a; }
+        .glass-card .text-amber-800, .glass-card .text-amber-900 { color: #fef3c7; }
+        .glass-card .text-emerald-600, .glass-card .text-emerald-700, .glass-card .text-emerald-900 { color: #6ee7b7; }
+        .glass-card .text-rose-500, .glass-card .text-rose-700, .glass-card .text-rose-900, .glass-card .text-rose-950 { color: #fda4af; }
+        .glass-card .text-blue-900 { color: #bfdbfe; }
+        .glass-card .text-white { color: #ffffff; }
+        .glass-card .bg-white { color: #ffffff; }
+        /* Subtle dividers/hover on the dark glass (never a white flash) */
+        .glass-card .border-slate-100, .glass-card .border-slate-200, .glass-card .border-slate-200\/60 { border-color: rgba(255, 255, 255, 0.12) !important; }
+        .glass-card .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.10); }
+        .glass-card .hover\:bg-white\/40:hover { background-color: rgba(255, 255, 255, 0.06) !important; }
+        /* Status pills / coloured badges -> dark tinted chips with light text */
+        .glass-card .bg-amber-50, .glass-card .bg-amber-100 { background-color: rgba(240, 180, 41, 0.18) !important; }
+        .glass-card .bg-emerald-50, .glass-card .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.18) !important; }
+        .glass-card .bg-rose-50, .glass-card .bg-rose-100 { background-color: rgba(244, 63, 94, 0.20) !important; }
+        .glass-card .bg-teal-50, .glass-card .bg-teal-100 { background-color: rgba(90, 95, 240, 0.22) !important; }
+        .glass-card .bg-blue-100 { background-color: rgba(59, 130, 246, 0.22) !important; }
+        .brand-mark svg, .chip-grad, .chip-grad-gold { color: #f0b429; }
+
+        /* ---- Flat solid buttons + smooth hover/tap lighting (no gradients) ---- */
+        button {
+            position: relative;
+            isolation: isolate;
+            cursor: pointer;
+            background-image: none !important;
+            transition: filter 0.2s ease, transform 0.2s ease,
+                        background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        button::after { content: none !important; display: none !important; }
+        button:hover, button:focus-visible { filter: brightness(1.2); }
+        button:active { filter: brightness(1.2); transform: scale(.97); }
+
+        button:focus-visible { outline: 2px solid #f0b429; outline-offset: 2px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            button, button::after { transition: none; animation: none; }
+            button:hover, button:active { transform: none; box-shadow: none; }
+            button::after { display: none; }
+            .hero-glow::after, .gradient-text { animation: none; }
+        }
+
+        /* ---- Brand logo alignment ---- */
+        .brand-mark { display: inline-flex; align-items: center; justify-content: center; }
+        .brand-mark svg { width: 100%; height: 100%; display: block; }
+
+        /* ============================ COLOUR SYSTEM ============================ */
+        :root {
+            --pd-blue-400: #7c84fb; --pd-blue-500: #5a5ff0; --pd-blue-600: #3330cc;
+            --pd-blue-700: #2725a8; --pd-blue-900: #1a1970;
+            --pd-violet: #7c5cf0;
+            --pd-gold-300: #fcd34d; --pd-gold-400: #f8c93f; --pd-gold-500: #f0b429; --pd-gold-600: #d9970f;
+        }
+        ::selection { background: var(--pd-gold-300); color: var(--pd-blue-900); }
+
+        /* (retired) colourful ambient backdrop -> replaced by the deep atmospheric
+           midnight-navy gradient applied to body above. */
+
+        /* ---- Cards: dark navy glass with a coloured top accent ---- */
+        .glass-card {
+            position: relative;
+            background-color: rgba(15, 23, 42, 0.8) !important;
+            background-image: none !important;
+            color: #ffffff;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            box-shadow: 0 14px 34px -18px rgba(0, 0, 0, 0.55), 0 2px 8px -6px rgba(0, 0, 0, 0.40);
+            transition: transform .25s ease, box-shadow .3s ease, border-color .3s ease;
+        }
+        .glass-card::before {
+            content: '';
+            position: absolute; inset: 0 0 auto 0; height: 4px; border-radius: 1.5rem 1.5rem 0 0;
+            background: linear-gradient(90deg, var(--pd-blue-600) 0%, var(--pd-violet) 45%, var(--pd-gold-500) 100%);
+            opacity: .95;
+        }
+        header.glass-card::before, #mob-nav::before { display: none; }
+        .glass-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 24px 48px -22px rgba(0, 0, 0, 0.65), 0 3px 10px -6px rgba(0, 0, 0, 0.45);
+        }
+        header.glass-card:hover, #mob-nav:hover { transform: none; }
+        /* Modal dialogs get a deeper shadow but should not lift on hover */
+        .fixed .glass-card { box-shadow: 0 30px 60px -25px rgba(0, 0, 0, 0.7); }
+        .fixed .glass-card:hover { transform: none; }
+
+        /* Branded top navigation bar: square, taller, dark glass, larger text */
+        header.glass-card {
+            border-radius: 0 !important;
+            padding: 24px 32px !important;
+            background-color: rgba(15, 23, 42, 0.85) !important;
+            background-image: none !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            border-left: 0 !important; border-right: 0 !important; border-top: 0 !important;
+            box-shadow: 0 10px 26px -20px rgba(0, 0, 0, 0.6);
+        }
+        /* Desktop nav container: square, translucent dark */
+        #app-nav {
+            border-radius: 0 !important;
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        }
+        #app-nav button { border-radius: 0 !important; color: #e2e8f0 !important; }
+        #app-nav button:hover { color: #ffffff !important; }
+        #app-nav button.bg-white { background-color: var(--pd-blue-600) !important; color: #ffffff !important; }
+        #app-nav button.bg-amber-500 { background-color: #92600a !important; color: #ffffff !important; }
+        #mob-nav { border-color: rgba(255, 255, 255, 0.12) !important; }
+        /* Larger, more prominent text/elements inside the top bar */
+        #app-nav button { font-size: 1rem !important; }
+        header.glass-card .brand-mark { width: 3rem !important; height: 3rem !important; }
+        header.glass-card .text-base { font-size: 1.375rem !important; line-height: 1.9rem; }
+        header.glass-card .text-xs { font-size: 0.85rem !important; }
+        header.glass-card .text-\[10px\] { font-size: 0.75rem !important; }
+        header.glass-card #header-role-badge { font-size: 0.875rem !important; }
+        /* Account / role badge in the top navigation bar -> FORCED dark navy glass, bright white text */
+        #header-role-badge {
+            display: inline-block;
+            background-color: rgba(15, 23, 42, 0.85) !important;
+            background-image: none !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            color: #ffffff !important;
+            font-style: normal !important;
+            white-space: nowrap;
+            max-width: 100%;
+        }
+        /* Every bit of text inside the badge is bright white, never washed out */
+        #header-role-badge,
+        #header-role-badge * {
+            color: #ffffff !important;
+            font-style: normal !important;
+        }
+        /* Let the taller 3-line brand block + badge breathe (no overflow of the fixed bar) */
+        header.glass-card > div { height: auto !important; min-height: 3.5rem; }
+        header.glass-card::after {
+            content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+            background: linear-gradient(90deg, var(--pd-blue-600), var(--pd-violet) 45%, var(--pd-gold-500) 100%);
+        }
+
+        /* Light-on-dark headline gradient (every stop passes AA on the navy canvas) */
+        .gradient-text {
+            background-image: linear-gradient(110deg, #ffffff, #fcd34d 30%, #a5b4fc 62%, #ffffff);
+            background-size: 260% 100%;
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent; color: transparent;
+            animation: gradientShift 9s ease infinite;
+        }
+        @keyframes gradientShift { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+        /* ---- Gradient icon chips ---- */
+        .chip-grad { color: #fff; }
+        .chip-grad-gold { color: #57330e; }
+        .chip-grad { background-image: linear-gradient(135deg, var(--pd-blue-400), var(--pd-blue-600) 58%, var(--pd-blue-700)); box-shadow: 0 14px 26px -14px rgba(51, 48, 204, 0.8); }
+        .chip-grad-gold { background-image: linear-gradient(135deg, var(--pd-gold-300), var(--pd-gold-500) 58%, var(--pd-gold-600)); box-shadow: 0 14px 26px -14px rgba(217, 151, 15, 0.8); }
+
+        /* ---- Hero glow behind the logo ---- */
+        .hero-glow { position: relative; z-index: 0; }
+        .hero-glow::after {
+            content: ''; position: absolute; inset: -16%; z-index: -1; border-radius: 9999px;
+            background: radial-gradient(circle, rgba(240, 180, 41, 0.50), rgba(90, 95, 240, 0.24) 48%, transparent 72%);
+            filter: blur(20px); animation: glowPulse 6s ease-in-out infinite;
+        }
+        @keyframes glowPulse { 0%, 100% { opacity: .7; transform: scale(.98); } 50% { opacity: 1; transform: scale(1.06); } }
+
+        /* ---- Buttons: flat SOLID colours only (gradients disabled), reliable white text ---- */
+        button.bg-teal-500, button.bg-teal-600 { background-color: #3330cc !important; }
+        button.bg-amber-500, button.bg-amber-600 { background-color: #92600a !important; }
+        button.bg-amber-500, button.bg-amber-600, button.bg-amber-500 *, button.bg-amber-600 * { color: #ffffff; }
+        .bg-amber-500.text-white { background-color: #92600a !important; }
+        button.bg-emerald-500, button.bg-emerald-600 { background-color: #047857 !important; }
+        button.bg-rose-500, button.bg-rose-600 { background-color: #be123c !important; }
+        button.bg-slate-100, button.bg-slate-200 { background-color: #1e3a8a !important; color: #f8fafc !important; }
+        button.bg-slate-100:hover, button.bg-slate-200:hover { background-color: #1e3a8a !important; }
+
+        /* (header + mobile nav are dark glass now; card text layer is light-on-dark above) */
+
+        /* ---- Accent scrollbar ---- */
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #0b1220; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--pd-blue-500), var(--pd-blue-700)); border-radius: 999px; border: 2px solid #0b1220; }
+        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, var(--pd-blue-600), var(--pd-blue-900)); }
+        /* (Direction-A full-dark overrides folded into the theme above: dark navy glass
+           cards with pure-white / light-slate text.) */
+    </style>
+</head>
+<body class="text-slate-100 antialiased flex flex-col min-h-screen">
+
+    <!-- PET DYNASTY LOGO (vector): crown + shield + dog & cat, in brand gold -->
+    <svg width="0" height="0" class="absolute" aria-hidden="true" focusable="false">
+        <symbol id="pet-dynasty-logo" viewBox="0 0 128 128">
+            <!-- crown -->
+            <polygon points="44,26 50,10 58,18 64,6 70,18 78,10 84,26" fill="currentColor"/>
+            <!-- shield outline -->
+            <path d="M30 22 H98 C105 22 110 27 110 34 V56 C110 82 88 104 64 116 C40 104 18 82 18 56 V34 C18 27 23 22 30 22 Z"
+                  fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round"/>
+            <!-- dog head -->
+            <g fill="currentColor">
+                <path d="M42 41 L34 24 L52 33 Z"/>
+                <ellipse cx="50" cy="52" rx="16" ry="15"/>
+                <path d="M61 45 H76 A9 9 0 0 1 76 63 H61 Z"/>
+                <circle cx="58" cy="50" r="2.6" fill="#2725a8"/>
+            </g>
+            <!-- cat head -->
+            <g fill="currentColor">
+                <path d="M70 82 L67 66 L82 74 Z"/>
+                <path d="M96 82 L99 66 L84 74 Z"/>
+                <ellipse cx="83" cy="90" rx="15" ry="14"/>
+                <path d="M70 84 H56 A8 8 0 0 0 56 100 H70 Z"/>
+                <circle cx="76" cy="88" r="2.6" fill="#2725a8"/>
+            </g>
+        </symbol>
+    </svg>
+
+    <!-- WELCOME / ROLE SELECTION VIEW -->
+    <div id="view-welcome" class="flex-1 flex items-center justify-center p-4">
+        <div class="max-w-4xl w-full">
+            <div class="text-center mb-10">
+                <div class="brand-mark hero-glow text-amber-500 w-28 h-28 mx-auto mb-4 drop-shadow-sm">
+                    <img src="logo.png" alt="Pet Dynasty Veterinary Clinic" class="w-full h-full object-contain"
+                         onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';">
+                    <svg role="img" aria-label="Pet Dynasty Veterinary Clinic logo" style="display:none"><use href="#pet-dynasty-logo"></use></svg>
+                </div>
+                <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight gradient-text">Pet Dynasty</h1>
+                <p class="text-amber-600 font-bold uppercase tracking-[0.28em] text-[11px] sm:text-xs mt-3">Veterinary Clinic</p>
+                <p class="text-slate-300 mt-3 text-sm sm:text-base">Select your portal to continue</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                <!-- Patient Portal Choice Card -->
+                <div class="glass-card rounded-3xl p-8 shadow-sm border border-slate-200 hover:border-teal-400 hover:shadow-xl transition-all text-center flex flex-col items-center justify-between">
+                    <div>
+                        <div class="chip-grad w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-6 mx-auto shrink-0">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-slate-800">Patient Account Portal</h2>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2.5 w-full mt-6">
+                        <button onclick="openPatientLoginModal()" class="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl shadow-md shadow-teal-600/20 transition-all text-xs">
+                            Login
+                        </button>
+                        <button onclick="openPatientRegisterModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-teal-700 font-semibold rounded-xl border border-teal-200 transition-all text-xs">
+                            Create Account
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Staff Dashboard Choice Card -->
+                <div class="glass-card rounded-3xl p-8 shadow-sm border border-slate-200 hover:border-amber-400 hover:shadow-xl transition-all text-center flex flex-col items-center justify-between">
+                    <div>
+                        <div class="chip-grad-gold w-16 h-16 rounded-2xl flex items-center justify-center text-2xl mb-6 mx-auto shrink-0">
+                            <i class="fa-solid fa-user-shield"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-slate-800">Staff Dashboard</h2>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-2.5 w-full mt-6">
+                        <button onclick="openStaffLoginModal()" class="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl shadow-md shadow-amber-600/20 transition-all text-xs">
+                            Login
+                        </button>
+                        <button onclick="openStaffRegisterModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-amber-700 font-semibold rounded-xl border border-amber-200 transition-all text-xs">
+                            Create Account
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PATIENT LOGIN MODAL -->
+    <div id="patient-login-modal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card bg-white/95 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-slate-200 relative">
+            <button onclick="closePatientLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-teal-500 text-white flex items-center justify-center mx-auto mb-3 shadow-md shadow-teal-500/20">
+                    <i class="fa-solid fa-right-to-bracket text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">Patient Login</h3>
+                <p class="text-xs text-slate-500 mt-1">Enter your registered account credentials.</p>
+            </div>
+
+            <form onsubmit="handlePatientLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Email / Username</label>
+                    <input type="text" id="patient-login-user" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm" placeholder="e.g. user@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
+                    <input type="password" id="patient-login-pass" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl shadow-md shadow-teal-600/20 transition-all text-sm mt-2">
+                    Login to Account
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <button onclick="switchToRegisterFromLogin()" class="text-xs text-teal-600 font-semibold hover:underline">
+                    Don't have an account? Create one
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PATIENT CREATE ACCOUNT MODAL -->
+    <div id="patient-register-modal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card bg-white/95 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-slate-200 relative">
+            <button onclick="closePatientRegisterModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-teal-500 text-white flex items-center justify-center mx-auto mb-3 shadow-md shadow-teal-500/20">
+                    <i class="fa-solid fa-user-plus text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">Create Patient Account</h3>
+                <p class="text-xs text-slate-500 mt-1">Register your account to book and track your visits.</p>
+            </div>
+
+            <form onsubmit="handlePatientRegister(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Full Name</label>
+                    <input type="text" id="patient-reg-name" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm" placeholder="e.g. John Doe">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Email / Username</label>
+                    <input type="text" id="patient-reg-user" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm" placeholder="e.g. john@example.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
+                    <input type="password" id="patient-reg-pass" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl shadow-md shadow-teal-600/20 transition-all text-sm mt-2">
+                    Register Account
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <button onclick="switchToLoginFromRegister()" class="text-xs text-teal-600 font-semibold hover:underline">
+                    Already have an account? Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STAFF LOGIN MODAL -->
+    <div id="staff-login-modal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card bg-white/95 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-slate-200 relative">
+            <button onclick="closeStaffLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center mx-auto mb-3 shadow-md shadow-amber-500/20">
+                    <i class="fa-solid fa-user-shield text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">Staff Authentication</h3>
+                <p class="text-xs text-slate-500 mt-1">Please enter your authorized username & password.</p>
+            </div>
+            <form onsubmit="handleStaffLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Username</label>
+                    <input type="text" id="staff-user" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm" placeholder="Enter username">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
+                    <input type="password" id="staff-pass" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl shadow-md shadow-amber-600/20 transition-all text-sm mt-2">
+                    Login to Dashboard
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <button onclick="switchToStaffRegisterFromLogin()" class="text-xs text-amber-600 font-semibold hover:underline">
+                    Don't have an account? Create one
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STAFF CREATE ACCOUNT MODAL -->
+    <div id="staff-register-modal" class="hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card bg-white/95 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-slate-200 relative">
+            <button onclick="closeStaffRegisterModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center bg-slate-100 transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center mx-auto mb-3 shadow-md shadow-amber-500/20">
+                    <i class="fa-solid fa-user-plus text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">Create Staff Account</h3>
+                <p class="text-xs text-slate-500 mt-1">Register a staff account to access the dashboard.</p>
+            </div>
+
+            <form onsubmit="handleStaffRegister(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Full Name</label>
+                    <input type="text" id="staff-reg-name" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm" placeholder="e.g. Dr. Jane Cruz">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Username / Email</label>
+                    <input type="text" id="staff-reg-user" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm" placeholder="e.g. jane@clinic.com">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Password</label>
+                    <input type="password" id="staff-reg-pass" required class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl shadow-md shadow-amber-600/20 transition-all text-sm mt-2">
+                    Register Staff Account
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <button onclick="switchToStaffLoginFromRegister()" class="text-xs text-amber-600 font-semibold hover:underline">
+                    Already have an account? Login
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APPLICATION VIEW -->
+    <div id="view-app" class="hidden flex-1 flex flex-col">
+        <!-- Top Navigation -->
+        <header class="sticky top-0 z-40 glass-card border-b border-slate-200/60 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="brand-mark text-amber-500 w-11 h-11 shrink-0">
+                        <img src="logo.png" alt="Pet Dynasty Veterinary Clinic" class="w-full h-full object-contain"
+                             onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';">
+                        <svg role="img" aria-label="Pet Dynasty Veterinary Clinic logo" style="display:none"><use href="#pet-dynasty-logo"></use></svg>
+                    </div>
+                    <div class="leading-tight">
+                        <span class="block font-extrabold text-base sm:text-lg text-slate-800 tracking-tight">Pet Dynasty</span>
+                        <span class="block text-[10px] font-bold uppercase tracking-[0.18em] text-amber-700">Veterinary Clinic</span>
+                        <span id="header-role-badge" class="inline-block text-[11px] font-bold text-white bg-slate-900/[0.85] border border-white/[0.2] backdrop-blur-md px-2.5 py-0.5 rounded-full mt-1">Patient Dashboard</span>
+                    </div>
+                </div>
+
+                <nav id="app-nav" class="hidden md:flex items-center space-x-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200"></nav>
+
+                <div class="flex items-center space-x-3">
+                    <div id="clinic-status-badge" class="flex items-center space-x-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full">
+                        <span class="flex h-2.5 w-2.5 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        </span>
+                        <span id="clinic-status-text" class="text-xs font-bold text-emerald-700">Clinic Open</span>
+                    </div>
+                    <button onclick="logoutRole()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition">
+                        <i class="fa-solid fa-right-from-bracket mr-1"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Mobile Bottom Navigation -->
+        <div id="mob-nav" class="md:hidden fixed bottom-0 left-0 right-0 z-40 glass-card border-t border-slate-200/60 p-2 flex justify-around"></div>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-16 md:mb-0 flex-1 w-full">
+
+            <!-- PATIENT TAB 1: QUEUE & POST-CONSULTATION REMINDERS -->
+            <section id="tab-patient-queue" class="hidden space-y-6">
+                <!-- Patient Account Notification & Post-Consultation Info Box -->
+                <div class="glass-card rounded-3xl p-6 shadow-sm border border-slate-200/60">
+                    <h2 class="text-xs font-bold text-teal-700 uppercase tracking-wider mb-3"><i class="fa-solid fa-bell mr-2 text-teal-500"></i>Account Notifications & Post-Consultation Records</h2>
+                    <div id="patient-notifications" class="space-y-3"></div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1 glass-card rounded-3xl p-6 shadow-sm border border-slate-200/60 relative overflow-hidden flex flex-col justify-between">
+                        <div>
+                            <h2 class="text-xs font-bold text-teal-700 uppercase tracking-wider mb-4"><i class="fa-solid fa-stethoscope mr-2 text-teal-500"></i>In Consultation</h2>
+                            <div id="current-consultation" class="space-y-4"></div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 glass-card rounded-3xl p-6 shadow-sm border border-slate-200/60">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xs font-bold text-amber-700 uppercase tracking-wider"><i class="fa-solid fa-clock mr-2 text-amber-500"></i>Waiting Room Queue</h2>
+                            <span id="queue-count" class="bg-amber-100 text-amber-900 text-xs font-bold px-3 py-1 rounded-full">0 pets waiting</span>
+                        </div>
+                        <div id="waiting-list" class="space-y-3"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PATIENT TAB 2: BOOK APPOINTMENT -->
+            <section id="tab-patient-book" class="hidden space-y-6 max-w-2xl mx-auto">
+                <div class="glass-card rounded-3xl p-8 shadow-sm border border-slate-200/60">
+                    <h2 class="text-2xl font-extrabold text-slate-800 mb-1">Book a Consultation</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 mb-6">Select your consultation type and enter your preferred time.</p>
+
+                    <form id="booking-form" onsubmit="handleBooking(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Owner Name</label>
+                                <input type="text" id="owner-name" required class="w-full px-4 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm" placeholder="e.g. John Doe">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Pet Name</label>
+                                <input type="text" id="pet-name" required class="w-full px-4 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm" placeholder="e.g. Max">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Pet Species</label>
+                                <select id="pet-type" class="w-full px-4 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm">
+                                    <option value="Dog">Dog 🐶</option>
+                                    <option value="Cat">Cat 🐱</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Type of Consultation</label>
+                                <select id="consultation-type" class="w-full px-4 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm">
+                                    <option value="General Checkup">General Checkup 🩺</option>
+                                    <option value="Vaccination & Deworming">Vaccination & Deworming 💉</option>
+                                    <option value="Grooming & Spa">Grooming & Spa 🛁</option>
+                                    <option value="Sick Pet / Emergency">Sick Pet / Emergency 🚨</option>
+                                    <option value="Dental Care">Dental Care 🦷</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Preferred Time / Schedule</label>
+                            <input type="text" id="time-slot" required class="w-full px-4 py-2.5 rounded-xl bg-white/60 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm" placeholder="e.g. 3:15 PM today or tomorrow at 10:00 AM">
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl shadow-md shadow-teal-600/20 transition-all text-sm mt-2">
+                            Submit Consultation Request
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- STAFF DASHBOARD -->
+            <section id="tab-staff-dashboard" class="hidden space-y-6">
+                <div class="glass-card rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-800"><i class="fa-solid fa-business-time mr-2 text-amber-500"></i>Clinic Operating Status</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Toggle whether the clinic is currently accepting consultation requests.</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span id="toggle-status-label" class="text-xs font-bold text-emerald-600 uppercase tracking-wider">Clinic Open</span>
+                        <button id="clinic-toggle-btn" onclick="toggleClinicStatus()" class="relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-emerald-500">
+                            <span id="clinic-toggle-knob" class="pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out translate-x-7"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/60">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-800">Staff Dashboard - Queue &amp; Patient Messaging</h2>
+                            <span class="text-xs text-emerald-600 font-semibold whitespace-nowrap"><i class="fa-solid fa-shield-halved mr-1"></i> Authenticated Staff Session</span>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-200 text-xs font-semibold text-slate-400 uppercase">
+                                    <th class="pb-3 px-2 align-middle">ID</th>
+                                    <th class="pb-3 px-2 align-middle">Pet & Owner</th>
+                                    <th class="pb-3 px-2 align-middle">Consultation Type & Preferred Time</th>
+                                    <th class="pb-3 px-2 align-middle">Status</th>
+                                    <th class="pb-3 px-2 align-middle text-right">Staff Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staff-table-body" class="text-sm divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- RECYCLE BIN / DELETED RECORDS -->
+                <div class="glass-card rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/60">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-recycle mr-2 text-rose-500"></i>Deleted Records (Recycle Bin)</h2>
+                            <span class="text-xs text-slate-500">Restore a deleted appointment back to the queue, or remove it permanently.</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span id="trash-count" class="bg-rose-100 text-rose-950 text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">0 deleted records</span>
+                            <button onclick="toggleTrash()" id="trash-toggle-btn" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition">Show</button>
+                        </div>
+                    </div>
+                    <div id="trash-panel" class="hidden overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-200 text-xs font-semibold text-slate-400 uppercase">
+                                    <th class="pb-3 px-2 align-middle">ID</th>
+                                    <th class="pb-3 px-2 align-middle">Pet & Owner</th>
+                                    <th class="pb-3 px-2 align-middle">Consultation & Deleted At</th>
+                                    <th class="pb-3 px-2 align-middle">Status</th>
+                                    <th class="pb-3 px-2 align-middle text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="staff-trash-body" class="text-sm divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // ---------------------------------------------------------------------------
+        // PERSISTENCE LAYER
+        // Shared app data (patient accounts, queue, clinic status) lives in
+        // localStorage so every tab/window sees the exact same data.
+        // The active session (which role THIS tab is logged in as) lives in
+        // sessionStorage: it still survives a page refresh, but it stays private
+        // to each tab, so one tab can be a Patient while another is Staff.
+        // ---------------------------------------------------------------------------
+        const STORAGE_KEYS = { clinicOpen: 'paws_isClinicOpen', accounts: 'paws_patientAccounts', queue: 'paws_queueData', deleted: 'paws_deletedData', staff: 'paws_staffAccounts' };
+        const SESSION_KEYS = { role: 'pd_currentRole', user: 'pd_currentPatientUser' };
+
+        // Safe storage helpers: never let a storage error (private mode, file://
+        // quirks, quota) crash the app or silently lose an account.
+        function readLocalJSON(key, fallback) {
+            try { const raw = localStorage.getItem(key); return raw !== null ? JSON.parse(raw) : fallback; }
+            catch (err) { console.warn('[Pet Dynasty] read failed for ' + key, err); return fallback; }
+        }
+        function writeLocalJSON(key, value) {
+            try { localStorage.setItem(key, JSON.stringify(value)); notifyChanged(key); return true; }
+            catch (err) { console.warn('[Pet Dynasty] write failed for ' + key, err); return false; }
+        }
+        function readSession(key, fallback) {
+            try { return sessionStorage.getItem(key) || fallback; } catch (err) { return fallback; }
+        }
+        function writeSession(key, value) {
+            try { sessionStorage.setItem(key, value); return true; } catch (err) { return false; }
+        }
+
+        // Real-time cross-tab channel (feature-detected; the 'storage' event below
+        // is a fallback for browsers without BroadcastChannel).
+        let syncChannel = null;
+        try { if (typeof BroadcastChannel !== 'undefined') syncChannel = new BroadcastChannel('paws_sync'); }
+        catch (err) { syncChannel = null; console.warn('[Pet Dynasty] BroadcastChannel unavailable; using storage events/polling.', err); }
+        function notifyChanged(key) {
+            if (!syncChannel) return;
+            try { syncChannel.postMessage({ key: key, at: Date.now() }); } catch (err) { /* ignore */ }
+        }
+
+        // In-memory mirrors, always reloaded from storage before render/mutate.
+        let currentRole = readSession(SESSION_KEYS.role, '') || null;
+        let currentPatientUser = readSession(SESSION_KEYS.user, '') || null;
+        let isClinicOpen = readLocalJSON(STORAGE_KEYS.clinicOpen, true);
+        let patientAccounts = readLocalJSON(STORAGE_KEYS.accounts, []);
+        let queueData = readLocalJSON(STORAGE_KEYS.queue, []);
+        let deletedData = readLocalJSON(STORAGE_KEYS.deleted, []);
+        let staffAccounts = readLocalJSON(STORAGE_KEYS.staff, []);
+
+        // Reload only the SHARED data from storage (never the per-tab session).
+        function syncFromStorage() {
+            isClinicOpen = readLocalJSON(STORAGE_KEYS.clinicOpen, true);
+            patientAccounts = readLocalJSON(STORAGE_KEYS.accounts, []);
+            queueData = readLocalJSON(STORAGE_KEYS.queue, []);
+            deletedData = readLocalJSON(STORAGE_KEYS.deleted, []);
+            staffAccounts = readLocalJSON(STORAGE_KEYS.staff, []);
+        }
+
+        // Granular savers: each one writes ONLY its own key. This is what stops one
+        // tab from clobbering (erasing) data that another tab just saved -- which is
+        // what used to make newly registered accounts "disappear" after a refresh.
+        function saveSession() { writeSession(SESSION_KEYS.role, currentRole || ''); writeSession(SESSION_KEYS.user, currentPatientUser || ''); }
+        function saveAccounts() { writeLocalJSON(STORAGE_KEYS.accounts, patientAccounts); }
+        function saveQueue() { writeLocalJSON(STORAGE_KEYS.queue, queueData); }
+        function saveClinicStatus() { writeLocalJSON(STORAGE_KEYS.clinicOpen, isClinicOpen); }
+        function saveDeleted() { writeLocalJSON(STORAGE_KEYS.deleted, deletedData); }
+        function saveStaffAccounts() { writeLocalJSON(STORAGE_KEYS.staff, staffAccounts); }
+
+        // Triggered whenever another tab/broadcast reports a change to shared data.
+        function refreshFromExternalChange() {
+            if (!currentRole) return;   // welcome screen: nothing mounted to refresh yet
+            syncFromStorage();
+            renderAll();
+            updateClinicStatusUI();
+        }
+        if (syncChannel) syncChannel.onmessage = refreshFromExternalChange;
+
+        // Auto-resume session if previously logged in before refresh
+        window.addEventListener('DOMContentLoaded', () => {
+            updateClinicStatusUI();
+            if (currentRole) {
+                document.getElementById('view-welcome').classList.add('hidden');
+                document.getElementById('view-app').classList.remove('hidden');
+                setupNavigation();
+                if (currentRole === 'patient') {
+                    switchTab('patient-queue');
+                } else {
+                    switchTab('staff-dashboard');
+                }
+            }
+        });
+
+        // ---------------------------------------------------------------------------
+        // REAL-TIME UPDATES (no manual refresh needed)
+        // 1) BroadcastChannel ping  -> instant same-origin sync across tabs/windows
+        // 2) 'storage' event        -> fallback for browsers without BroadcastChannel
+        // 3) focus / visibilitychange -> refresh the moment this tab is re-activated
+        // 4) lightweight poll       -> final safety net; re-renders only on real change
+        // ---------------------------------------------------------------------------
+        window.addEventListener('storage', (event) => {
+            if (event.key && event.key.indexOf('paws_') === 0) refreshFromExternalChange();
+        });
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshFromExternalChange(); });
+        window.addEventListener('focus', refreshFromExternalChange);
+
+        let lastStateSignature = null;
+        setInterval(() => {
+            if (!currentRole) { lastStateSignature = null; return; }
+            syncFromStorage();
+            const signature = JSON.stringify([patientAccounts, queueData, deletedData, isClinicOpen]);
+            if (signature !== lastStateSignature) {
+                lastStateSignature = signature;
+                renderAll();
+                updateClinicStatusUI();
+            }
+        }, 1500);
+
+        // Patient Login Modal Functions
+        function openPatientLoginModal() {
+            document.getElementById('patient-login-modal').classList.remove('hidden');
+            document.getElementById('patient-login-user').value = '';
+            document.getElementById('patient-login-pass').value = '';
+        }
+
+        function closePatientLoginModal() {
+            document.getElementById('patient-login-modal').classList.add('hidden');
+        }
+
+        function switchToRegisterFromLogin() {
+            closePatientLoginModal();
+            openPatientRegisterModal();
+        }
+
+        function handlePatientLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('patient-login-user').value.trim();
+            const pass = document.getElementById('patient-login-pass').value;
+
+            syncFromStorage();
+
+            const account = patientAccounts.find(p => p.email === user && p.pass === pass);
+            if (account) {
+                currentPatientUser = account.email;
+                saveSession();
+                closePatientLoginModal();
+                selectRole('patient');
+            } else {
+                alert('Invalid email or password, or account does not exist. Please create an account first.');
+            }
+        }
+
+        // Patient Register Modal Functions
+        function openPatientRegisterModal() {
+            document.getElementById('patient-register-modal').classList.remove('hidden');
+            document.getElementById('patient-reg-name').value = '';
+            document.getElementById('patient-reg-user').value = '';
+            document.getElementById('patient-reg-pass').value = '';
+        }
+
+        function closePatientRegisterModal() {
+            document.getElementById('patient-register-modal').classList.add('hidden');
+        }
+
+        function switchToLoginFromRegister() {
+            closePatientRegisterModal();
+            openPatientLoginModal();
+        }
+
+        function handlePatientRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('patient-reg-name').value.trim();
+            const user = document.getElementById('patient-reg-user').value.trim();
+            const pass = document.getElementById('patient-reg-pass').value;
+
+            syncFromStorage();
+
+            const exists = patientAccounts.find(p => p.email === user);
+            if (exists) {
+                alert('An account with this email already exists!');
+                return;
+            }
+
+            patientAccounts.push({ email: user, pass, name });
+            saveAccounts();
+            alert('Account registered successfully! Your account is saved - please log in with your new credentials.');
+            closePatientRegisterModal();
+            openPatientLoginModal();
+            document.getElementById('patient-login-user').value = user;
+            document.getElementById('patient-login-pass').focus();
+        }
+
+        // Staff Login Modal Functions
+        function openStaffLoginModal() {
+            document.getElementById('staff-login-modal').classList.remove('hidden');
+            document.getElementById('staff-user').value = '';
+            document.getElementById('staff-pass').value = '';
+        }
+
+        function closeStaffLoginModal() {
+            document.getElementById('staff-login-modal').classList.add('hidden');
+        }
+
+        function switchToStaffRegisterFromLogin() {
+            closeStaffLoginModal();
+            openStaffRegisterModal();
+        }
+
+        function handleStaffLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('staff-user').value.trim();
+            const pass = document.getElementById('staff-pass').value;
+
+            syncFromStorage();
+            const registered = staffAccounts.find(s => s.email === user && s.pass === pass);
+
+            if (registered) {
+                closeStaffLoginModal();
+                selectRole('staff');
+            } else {
+                alert('Invalid staff credentials. Please check your username and password, or create a staff account first.');
+            }
+        }
+
+        // Staff Register Modal Functions
+        function openStaffRegisterModal() {
+            document.getElementById('staff-register-modal').classList.remove('hidden');
+            document.getElementById('staff-reg-name').value = '';
+            document.getElementById('staff-reg-user').value = '';
+            document.getElementById('staff-reg-pass').value = '';
+        }
+
+        function closeStaffRegisterModal() {
+            document.getElementById('staff-register-modal').classList.add('hidden');
+        }
+
+        function switchToStaffLoginFromRegister() {
+            closeStaffRegisterModal();
+            openStaffLoginModal();
+        }
+
+        function handleStaffRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('staff-reg-name').value.trim();
+            const user = document.getElementById('staff-reg-user').value.trim();
+            const pass = document.getElementById('staff-reg-pass').value;
+
+            syncFromStorage();
+
+            const exists = staffAccounts.find(s => s.email === user);
+            if (exists) {
+                alert('A staff account with this username already exists!');
+                return;
+            }
+
+            staffAccounts.push({ email: user, pass, name });
+            saveStaffAccounts();
+            alert('Staff account registered successfully! Your account is saved - please log in with your new credentials.');
+            closeStaffRegisterModal();
+            openStaffLoginModal();
+            document.getElementById('staff-user').value = user;
+            document.getElementById('staff-pass').focus();
+        }
+
+        function selectRole(role) {
+            currentRole = role;
+            saveSession();
+            document.getElementById('view-welcome').classList.add('hidden');
+            document.getElementById('view-app').classList.remove('hidden');
+            setupNavigation();
+            if (role === 'patient') {
+                switchTab('patient-queue');
+            } else {
+                switchTab('staff-dashboard');
+            }
+        }
+
+        function logoutRole() {
+            currentRole = null;
+            currentPatientUser = null;
+            saveSession();
+            document.getElementById('view-app').classList.add('hidden');
+            document.getElementById('view-welcome').classList.remove('hidden');
+        }
+
+        function toggleClinicStatus() {
+            isClinicOpen = !isClinicOpen;
+            saveClinicStatus();
+            updateClinicStatusUI();
+        }
+
+        function updateClinicStatusUI() {
+            const statusBadge = document.getElementById('clinic-status-badge');
+            const toggleBtn = document.getElementById('clinic-toggle-btn');
+            const toggleKnob = document.getElementById('clinic-toggle-knob');
+            const toggleLabel = document.getElementById('toggle-status-label');
+
+            if (isClinicOpen) {
+                if (statusBadge) {
+                    statusBadge.className = "flex items-center space-x-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-full";
+                    statusBadge.innerHTML = `
+                        <span class="flex h-2.5 w-2.5 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        </span>
+                        <span id="clinic-status-text" class="text-xs font-bold text-emerald-700">Clinic Open</span>
+                    `;
+                }
+                if (toggleBtn) toggleBtn.className = "relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-emerald-500";
+                if (toggleKnob) toggleKnob.className = "pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out translate-x-7";
+                if (toggleLabel) {
+                    toggleLabel.innerText = "Clinic Open";
+                    toggleLabel.className = "text-xs font-bold text-emerald-600 uppercase tracking-wider";
+                }
+            } else {
+                if (statusBadge) {
+                    statusBadge.className = "flex items-center space-x-2 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-full";
+                    statusBadge.innerHTML = `
+                        <span class="flex h-2.5 w-2.5 relative">
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                        </span>
+                        <span id="clinic-status-text" class="text-xs font-bold text-rose-700">Clinic Closed</span>
+                    `;
+                }
+                if (toggleBtn) toggleBtn.className = "relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none bg-slate-300";
+                if (toggleKnob) toggleKnob.className = "pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out translate-x-0";
+                if (toggleLabel) {
+                    toggleLabel.innerText = "Clinic Closed";
+                    toggleLabel.className = "text-xs font-bold text-slate-500 uppercase tracking-wider";
+                }
+            }
+        }
+
+        function setupNavigation() {
+            const deskNav = document.getElementById('app-nav');
+            const mobNav = document.getElementById('mob-nav');
+            const badge = document.getElementById('header-role-badge');
+
+            if (currentRole === 'patient') {
+                syncFromStorage();
+                const acc = patientAccounts.find(p => p.email === currentPatientUser);
+                badge.innerText = `Account: ${acc ? acc.name : currentPatientUser}`;
+                badge.className = "inline-block text-[11px] font-bold text-white bg-slate-900/[0.85] border border-white/[0.2] backdrop-blur-md px-2.5 py-0.5 rounded-full mt-1";
+
+                deskNav.innerHTML = `
+                    <button onclick="switchTab('patient-queue')" id="nav-patient-queue" class="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-teal-700 shadow-sm">Queue & Records</button>
+                    <button onclick="switchTab('patient-book')" id="nav-patient-book" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-slate-900 transition-all">Book Consultation</button>
+                `;
+                mobNav.innerHTML = `
+                    <button onclick="switchTab('patient-queue')" id="mob-patient-queue" class="flex flex-col items-center py-1 px-4 text-teal-700 font-medium text-xs">
+                        <i class="fa-solid fa-list text-base mb-1"></i>Queue
+                    </button>
+                    <button onclick="switchTab('patient-book')" id="mob-patient-book" class="flex flex-col items-center py-1 px-4 text-slate-500 font-medium text-xs">
+                        <i class="fa-solid fa-calendar-plus text-base mb-1"></i>Book
+                    </button>
+                `;
+            } else {
+                badge.innerText = "Staff Dashboard Portal";
+                badge.className = "inline-block text-[11px] font-bold text-white bg-slate-900/[0.85] border border-white/[0.2] backdrop-blur-md px-2.5 py-0.5 rounded-full mt-1";
+
+                deskNav.innerHTML = `
+                    <button onclick="switchTab('staff-dashboard')" id="nav-staff-dashboard" class="px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-amber-500 text-white shadow-sm">Staff Dashboard</button>
+                `;
+                mobNav.innerHTML = `
+                    <button onclick="switchTab('staff-dashboard')" id="mob-staff-dashboard" class="flex flex-col items-center py-1 px-4 text-amber-800 font-medium text-xs">
+                        <i class="fa-solid fa-user-shield text-base mb-1"></i>Dashboard
+                    </button>
+                `;
+            }
+        }
+
+        function switchTab(tabId) {
+            ['patient-queue', 'patient-book', 'staff-dashboard'].forEach(t => {
+                const sec = document.getElementById(`tab-${t}`);
+                if (sec) sec.classList.add('hidden');
+
+                const nBtn = document.getElementById(`nav-${t}`);
+                if (nBtn) nBtn.className = "px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:text-slate-900 transition-all";
+
+                const mBtn = document.getElementById(`mob-${t}`);
+                if (mBtn) mBtn.className = "flex flex-col items-center py-1 px-4 text-slate-500 font-medium text-xs";
+            });
+
+            const targetSec = document.getElementById(`tab-${tabId}`);
+            if (targetSec) targetSec.classList.remove('hidden');
+
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.className = tabId === 'staff-dashboard'
+                    ? "px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-amber-500 text-white shadow-sm"
+                    : "px-4 py-2 rounded-lg text-sm font-semibold transition-all bg-white text-teal-700 shadow-sm";
+            }
+
+            const activeMob = document.getElementById(`mob-${tabId}`);
+            if (activeMob) {
+                activeMob.className = tabId === 'staff-dashboard'
+                    ? "flex flex-col items-center py-1 px-4 text-amber-800 font-medium text-xs"
+                    : "flex flex-col items-center py-1 px-4 text-teal-700 font-medium text-xs";
+            }
+
+            renderAll();
+        }
+
+        function renderAll() {
+            syncFromStorage();
+
+            renderQueue();
+            renderStaffTable();
+            renderTrash();
+            if (currentRole === 'patient') {
+                renderPatientNotifications();
+            }
+        }
+
+        function renderPatientNotifications() {
+            const notifEl = document.getElementById('patient-notifications');
+            if (!notifEl) return;
+
+            const myRecords = queueData.filter(q => q.patientEmail === currentPatientUser);
+
+            if (myRecords.length === 0) {
+                notifEl.innerHTML = `<p class="text-xs text-slate-400">No consultation records found in your account yet. Try booking a consultation!</p>`;
+                return;
+            }
+
+            notifEl.innerHTML = myRecords.map(item => {
+                let badgeColor = 'bg-amber-100 text-amber-900';
+                let message = `Requested consultation type: <strong>${item.consultType}</strong> for preferred time: <strong>${item.time}</strong> - Pending staff review.`;
+
+                if (item.status === 'Waiting' || item.status === 'In Consultation') {
+                    badgeColor = 'bg-emerald-100 text-emerald-900';
+                    message = `Your consultation (<strong>${item.consultType}</strong> at <strong>${item.time}</strong>) was <strong>approved</strong> by staff!`;
+                } else if (item.status === 'Completed') {
+                    badgeColor = 'bg-teal-100 text-teal-900';
+                    message = `Consultation completed. <strong>Post-Consultation Info / Reminder:</strong> ${item.postConsultInfo || 'None provided yet.'}`;
+                } else if (item.status === 'Declined') {
+                    badgeColor = 'bg-rose-100 text-rose-900';
+                    message = `Preferred time unavailable. <strong>Staff note: ${item.staffNote || 'Please choose another time.'}</strong>`;
+                }
+
+                return `
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-2xl bg-white/50 border border-slate-100 text-xs gap-2">
+                        <div>
+                            <span class="font-bold text-slate-800">Pet: ${item.pet} (${item.type})</span>
+                            <div class="text-slate-600 mt-0.5">${message}</div>
+                        </div>
+                        <span class="px-3 py-1 rounded-full font-semibold text-center shrink-0 ${badgeColor}">${item.status}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderQueue() {
+            const currentEl = document.getElementById('current-consultation');
+            const waitingEl = document.getElementById('waiting-list');
+            const countEl = document.getElementById('queue-count');
+
+            const current = queueData.find(q => q.status === 'In Consultation');
+            const waiting = queueData.filter(q => q.status === 'Waiting');
+
+            if (countEl) countEl.innerText = `${waiting.length} pets waiting`;
+
+            if (current) {
+                currentEl.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        <div class="w-14 h-14 rounded-2xl bg-teal-100 text-teal-600 flex items-center justify-center text-xl font-bold shrink-0">#${current.id}</div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base sm:text-lg">${current.pet} <span class="text-xs font-normal text-slate-500">(${current.type})</span></h3>
+                            <p class="text-xs text-slate-500">Owner: ${current.owner} • Time: ${current.time}</p>
+                            <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-teal-700">${current.consultType}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                currentEl.innerHTML = `<p class="text-xs sm:text-sm text-slate-400 py-4">No pet currently in consultation.</p>`;
+            }
+
+            if (waiting.length > 0) {
+                waitingEl.innerHTML = waiting.map((item, index) => `
+                    <div class="flex items-center justify-between p-4 rounded-2xl bg-white/50 border border-slate-100 shadow-2xs">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-sm font-bold text-slate-400 w-6">#${index + 1}</span>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm sm:text-base">${item.pet} <span class="text-xs font-normal text-slate-500">(${item.type})</span></h4>
+                                <p class="text-xs text-slate-500">Owner: ${item.owner} • Time: ${item.time}</p>
+                                <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700">${item.consultType}</span>
+                            </div>
+                        </div>
+                        <span class="text-xs font-semibold px-3 py-1 bg-amber-50 text-amber-700 rounded-full shrink-0">Est. ${(index + 1) * 15} mins</span>
+                    </div>
+                `).join('');
+            } else {
+                waitingEl.innerHTML = `<p class="text-xs sm:text-sm text-slate-400 text-center py-4">No pets waiting in line right now.</p>`;
+            }
+        }
+
+        function renderStaffTable() {
+            const tbody = document.getElementById('staff-table-body');
+            if (!tbody) return;
+
+            if (queueData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 text-sm">No consultation records in the system yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = queueData.map(item => `
+                <tr class="hover:bg-white/40 border-b border-slate-100 last:border-none">
+                    <td class="py-3 px-2 align-middle font-bold text-slate-800 whitespace-nowrap">#${item.id}</td>
+                    <td class="py-3 px-2 align-middle">
+                        <span class="block text-xs font-bold text-white">
+                            <i class="fa-solid ${item.type === 'Cat' ? 'fa-cat' : 'fa-dog'} mr-1.5" aria-hidden="true"></i>${item.type}: ${item.pet}
+                        </span>
+                        <span class="block text-xs font-bold text-white">
+                            <i class="fa-solid fa-user mr-1.5" aria-hidden="true"></i>Owner: ${item.owner}
+                        </span>
+                    </td>
+                    <td class="py-3 px-2 align-middle text-xs text-slate-600">
+                        <span class="block font-bold text-teal-700">${item.consultType}</span>
+                        <span class="block text-slate-500">Preferred: <strong>${item.time}</strong></span>
+                    </td>
+                    <td class="py-3 px-2 align-middle">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${item.status === 'Pending' ? 'bg-amber-100 text-amber-900' : item.status === 'Waiting' ? 'bg-blue-100 text-blue-900' : item.status === 'In Consultation' ? 'bg-teal-100 text-teal-900' : item.status === 'Completed' ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'}">${item.status}</span>
+                    </td>
+                    <td class="py-3 px-2 align-middle text-right space-x-1 whitespace-nowrap">
+                        ${item.status === 'Pending' ? `
+                            <button onclick="acceptBooking(${item.id})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm">Accept</button>
+                            <button onclick="declineBooking(${item.id})" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm">Decline</button>
+                        ` : ''}
+                        ${item.status === 'Waiting' ? `<button onclick="startConsultation(${item.id})" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg shadow-sm">Call In</button>` : ''}
+                        ${item.status === 'In Consultation' ? `<button onclick="completeVisit(${item.id})" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm">Finish & Send Reminder</button>` : ''}
+                        ${(item.status === 'Completed' || item.status === 'Declined') ? `<button onclick="deleteFromQueue(${item.id})" class="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg shadow-sm"><i class="fa-solid fa-trash-can mr-1"></i>Delete</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // ------------------------------------------------------------------
+        // RECYCLE BIN: staff can soft-delete finished/rejected records, view
+        // what was deleted, then restore it or remove it permanently.
+        // ------------------------------------------------------------------
+        function renderTrash() {
+            const tbody = document.getElementById('staff-trash-body');
+            const countEl = document.getElementById('trash-count');
+
+            if (countEl) countEl.innerText = deletedData.length + (deletedData.length === 1 ? ' deleted record' : ' deleted records');
+            if (!tbody) return;
+
+            if (deletedData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 text-sm">Recycle bin is empty.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = deletedData.map(item => `
+                <tr class="hover:bg-white/40 border-b border-slate-100 last:border-none">
+                    <td class="py-3 px-2 align-middle font-bold text-slate-800 whitespace-nowrap">#${item.id}</td>
+                    <td class="py-3 px-2 align-middle">
+                        <span class="block text-xs font-bold text-white">
+                            <i class="fa-solid ${item.type === 'Cat' ? 'fa-cat' : 'fa-dog'} mr-1.5" aria-hidden="true"></i>${item.type}: ${item.pet}
+                        </span>
+                        <span class="block text-xs font-bold text-white">
+                            <i class="fa-solid fa-user mr-1.5" aria-hidden="true"></i>Owner: ${item.owner}
+                        </span>
+                    </td>
+                    <td class="py-3 px-2 align-middle text-xs text-slate-600">
+                        <span class="block font-bold text-teal-700">${item.consultType}</span>
+                        <span class="block text-slate-500">Deleted: <strong>${formatDeletedAt(item.deletedAt)}</strong></span>
+                    </td>
+                    <td class="py-3 px-2 align-middle">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${item.status === 'Completed' ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'}">${item.status}</span>
+                    </td>
+                    <td class="py-3 px-2 align-middle text-right space-x-1 whitespace-nowrap">
+                        <button onclick="restoreDeleted(${item.id})" class="px-2.5 py-1 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg shadow-sm"><i class="fa-solid fa-rotate-left mr-1"></i>Restore</button>
+                        <button onclick="deletePermanently(${item.id})" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-sm"><i class="fa-solid fa-trash-can mr-1"></i>Delete Permanently</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function formatDeletedAt(ts) {
+            if (!ts) return 'unknown';
+            const d = new Date(ts);
+            return isNaN(d.getTime()) ? 'unknown' : d.toLocaleString();
+        }
+
+        function deleteFromQueue(id) {
+            syncFromStorage();
+            const target = queueData.find(q => q.id === id);
+            if (!target) return;
+            if (target.status !== 'Completed' && target.status !== 'Declined') {
+                alert('Only completed or declined appointments can be deleted.');
+                return;
+            }
+            if (!confirm('Move this appointment to the recycle bin? You can restore it later.')) return;
+
+            queueData = queueData.filter(q => q.id !== id);
+            deletedData.unshift(Object.assign({}, target, { deletedAt: Date.now() }));
+            saveQueue();
+            saveDeleted();
+            renderAll();
+        }
+
+        function restoreDeleted(id) {
+            syncFromStorage();
+            const index = deletedData.findIndex(d => d.id === id);
+            if (index === -1) return;
+
+            const item = Object.assign({}, deletedData[index]);
+            delete item.deletedAt;
+
+            deletedData.splice(index, 1);
+            queueData.push(item);   // original id is preserved; new bookings never reuse it
+            saveQueue();
+            saveDeleted();
+            renderAll();
+        }
+
+        function deletePermanently(id) {
+            syncFromStorage();
+            if (!confirm('Permanently delete this record? This action cannot be undone.')) return;
+
+            deletedData = deletedData.filter(d => d.id !== id);
+            saveDeleted();
+            renderAll();
+        }
+
+        function toggleTrash() {
+            const panel = document.getElementById('trash-panel');
+            const btn = document.getElementById('trash-toggle-btn');
+            if (!panel) return;
+            const willShow = panel.classList.contains('hidden');
+            panel.classList.toggle('hidden');
+            if (btn) btn.innerText = willShow ? 'Hide' : 'Show';
+        }
+
+        function handleBooking(e) {
+            e.preventDefault();
+            if (!isClinicOpen) {
+                alert('Sorry, the clinic is currently closed for new consultation bookings.');
+                return;
+            }
+
+            const owner = document.getElementById('owner-name').value.trim();
+            const pet = document.getElementById('pet-name').value.trim();
+            const type = document.getElementById('pet-type').value;
+            const consultType = document.getElementById('consultation-type').value;
+            const time = document.getElementById('time-slot').value.trim();
+
+            syncFromStorage();
+            const allIds = queueData.concat(deletedData).map(q => q.id);
+            const newId = allIds.length > 0 ? Math.max(...allIds) + 1 : 101;
+
+            queueData.push({
+                id: newId,
+                patientEmail: currentPatientUser,
+                owner,
+                pet,
+                type,
+                consultType,
+                status: "Pending",
+                time,
+                staffNote: "",
+                postConsultInfo: ""
+            });
+
+            saveQueue();
+            document.getElementById('booking-form').reset();
+
+            confetti({
+                particleCount: 80,
+                spread: 60,
+                origin: { y: 0.6 }
+            });
+
+            alert(`Consultation request submitted successfully! It now appears directly in the staff dashboard for review.`);
+            switchTab('patient-queue');
+        }
+
+        function acceptBooking(id) {
+            queueData = JSON.parse(localStorage.getItem('paws_queueData')) || [];
+            const target = queueData.find(q => q.id === id);
+            if (target) {
+                target.status = 'Waiting';
+                target.staffNote = '';
+                saveQueue();
+            }
+            renderAll();
+        }
+
+        function declineBooking(id) {
+            queueData = JSON.parse(localStorage.getItem('paws_queueData')) || [];
+            const target = queueData.find(q => q.id === id);
+            if (target) {
+                const altTime = prompt("Preferred time unavailable. Enter alternative available time or message for the patient:", "Suggested: Tomorrow at 2:00 PM");
+                if (altTime !== null) {
+                    target.status = 'Declined';
+                    target.staffNote = altTime;
+                    saveQueue();
+                }
+            }
+            renderAll();
+        }
+
+        function startConsultation(id) {
+            queueData = JSON.parse(localStorage.getItem('paws_queueData')) || [];
+            queueData.forEach(q => {
+                if (q.status === 'In Consultation') q.status = 'Completed';
+            });
+            const target = queueData.find(q => q.id === id);
+            if (target) target.status = 'In Consultation';
+            saveQueue();
+            renderAll();
+        }
+
+        function completeVisit(id) {
+            queueData = JSON.parse(localStorage.getItem('paws_queueData')) || [];
+            const target = queueData.find(q => q.id === id);
+            if (target) {
+                const reminder = prompt("Enter post-consultation information / medication reminders for this patient:", "Give 1 antibiotic pill twice daily. Next checkup in 2 weeks.");
+                if (reminder !== null) {
+                    target.status = 'Completed';
+                    target.postConsultInfo = reminder;
+                    saveQueue();
+                }
+            }
+            renderAll();
+        }
+    </script>
+</body>
+</html>
